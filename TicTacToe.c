@@ -104,6 +104,7 @@ int main()
             printf("Under Construction");
         }
 
-        makeGrid(array, size);
+        // makeGrid(array, size);
         return 0;
     }
+}

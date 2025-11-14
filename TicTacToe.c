@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define SIZE 10 // This is the total size of the array
+#define SIZE 10 // This is the total size of the array (10)
 
 void makeGrid(char array[][SIZE], int size)
 {
@@ -32,6 +32,17 @@ void makeGrid(char array[][SIZE], int size)
     }
 }
 
+int spaceCheck(char array[][SIZE], int x, int y)
+{
+    if (array[x - 1][y - 1] != ' ') // If the space is not blank, return 1
+    {
+        printf("That space is already taken, please choose another\n");
+        return 1;
+    }
+    else
+        return 0;
+}
+
 void pvp(char array[][SIZE], int *turn) // Player vs. PLayer function
 {
     int x, y; // temporary variables (not really needed but if this isn't here there are error lines, but program still works)
@@ -46,12 +57,14 @@ void pvp(char array[][SIZE], int *turn) // Player vs. PLayer function
     {
         printf("Invalid input\n");
     }
-    if (*turn == 0)
+    int check = spaceCheck(array, x, y); // If one is returned, do not place anything, but also don't change the turn
+    if (*turn == 0 && check == 0)
     {
+
         array[x - 1][y - 1] = 'x'; // the -1 is not needed, it just makes the placement more user-friendly
         *turn = 1;                 // changes turn to 1
     }
-    else if (*turn == 1)
+    else if (*turn == 1 && check == 0)
     {
         array[x - 1][y - 1] = 'o';
         *turn = 0; // changes turn to 0
@@ -103,8 +116,6 @@ int main()
         {
             printf("Under Construction");
         }
-
-        // makeGrid(array, size);
-        return 0;
     }
+    return 0;
 }

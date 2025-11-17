@@ -5,6 +5,14 @@
 
 #define SIZE 10 // This is the total size of the array (10)
 
+struct XandO
+{
+    int scoreX;
+    int scoreO;
+    int checkX;
+    int checkO;
+};
+
 void makeGrid(char array[][SIZE], int size)
 {
     printf("\n");
@@ -298,13 +306,57 @@ void pvAI(char array[][SIZE], int *turn, int size)
         *turn = 0; // changes turn to 0
     }
 }
+void reset(char array[][SIZE], int size)
+{
+    for (int i = 0; i < size; i++) // These for loops fill each space in the array, and this must be done for the makeGrid to work
+    {
+        for (int j = 0; j < 10; j++)
+        {
+            array[i][j] = ' ';
+        }
+    }
+}
+void endGame(char array[][SIZE], int size, struct XandO var, int playAgain, int *gameon)
+{
+    if (var.checkO == 1)
+    {
+        printf(": Player O wins\n");
+        var.scoreO++;
+        printf("\nScore: X: %d --- O: %d", var.scoreX, var.scoreO);
+        printf("\nEnter 1 to play again\nEnter 0 to exit\n");
+        scanf("%d", &playAgain);
+        if (playAgain == 1)
+        {
+            reset(array, size);
+        }
+        else if (playAgain == 0)
+            *gameon = 0;
+    }
+    if (var.checkX == 2)
+    {
+        printf(": Player X wins");
+        var.scoreX++;
+        printf("\nScore: X: %d --- O: %d", var.scoreX++, var.scoreO++);
+        printf("\nEnter 1 to play again\nEnter 0 to exit\n");
+        scanf("%d", &playAgain);
+        if (playAgain == 1)
+        {
+            reset(array, size);
+        }
+        else if (playAgain == 0)
+            *gameon = 0;
+    }
+}
 int main()
 {
     int size; // This is the grid size wanted, should be user inputted
-    int gamemode = 0;
-    int gameon = 1;
-    int turn = 0;
-    int checkx = 0, checko = 0;
+    int gamemode = 0, gameon = 1;
+    int turn = 0, playAgain = 0;
+    int checkx = 0, checko = 0, scorex = 0, scoreo = 0;
+    struct XandO var;
+    var.scoreX = 0;
+    var.scoreO = 0;
+
     srand(time(NULL));
 
     // User inputs
@@ -319,14 +371,8 @@ int main()
     printf("Grid Size: ");
     scanf("%d", &size);
 
-    char array[SIZE][SIZE];        // Array size must be defined for the makeGrid to work, SIZE is predefined
-    for (int i = 0; i < size; i++) // These for loops fill each space in the array, and this must be done for the makeGrid to work
-    {
-        for (int j = 0; j < 10; j++)
-        {
-            array[i][j] = ' ';
-        }
-    }
+    char array[SIZE][SIZE]; // Array size must be defined for the makeGrid to work, SIZE is predefined
+    reset(array, size);
 
     makeGrid(array, size);
 
@@ -338,22 +384,10 @@ int main()
             pvp(array, &turn); // Needs the array and the address of the turn, so the turn variable can be changed within the function
             makeGrid(array, size);
 
-            checkx = CheckWinX(array, size);
-            checko = CheckWinO(array, size);
+            var.checkX = CheckWinX(array, size);
+            var.checkO = CheckWinO(array, size);
 
-            if (checko == 1)
-            {
-                printf(": Player O wins");
-                gameon = 0;
-            }
-            if (checkx == 2)
-            {
-                printf(": Player X wins");
-                gameon = 0;
-            }
-
-            // Need function for winning/losing to exit gameon
-            // Need a function to keep score
+            endGame(array, size, var, playAgain, &gameon);
         }
         else if (gamemode == 2)
         {

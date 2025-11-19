@@ -235,7 +235,7 @@ int spaceCheck(char array[][SIZE], int x, int y)
     else
         return 0;
 }
-int AIspaceCheck(char array[][SIZE], int x, int y)
+int AIspaceCheck(char array[][SIZE], int x, int y) // under development
 {
     if (array[x - 1][y - 1] != ' ') // If the space is not blank, return 1
     {
@@ -271,7 +271,7 @@ void pvp(char array[][SIZE], int *turn) // Player vs. PLayer function
         *turn = 0; // changes turn to 0
     }
 }
-void pvAI(char array[][SIZE], int *turn, int size)
+void pvAI(char array[][SIZE], int *turn, int size) // under development
 {
     int x, y, check, randomX, randomY, checkAI;
 
@@ -360,16 +360,32 @@ int main()
     srand(time(NULL));
 
     // User inputs
-    printf("\n=---------Tic-Tac-Toe---------=\n\n");
-    printf("Player vs. Player: 1\n");
-    printf("Player vs. AI: 2\n");
-    printf("Gamemode: ");
-    scanf("%d", &gamemode);
+    do
+    {
+        printf("\n=---------Tic-Tac-Toe---------=\n\n");
+        printf("Player vs. Player: 1\n");
+        printf("Player vs. AI: 2\n");
+        printf("Gamemode: ");
 
-    printf("\nPlease enter one integer (3-10) for the size of the grid\n");
-    printf("Example: Input 3 for a 3x3 grid size\n");
-    printf("Grid Size: ");
-    scanf("%d", &size);
+        scanf("%d", &gamemode);
+        if (gamemode != 1 && gamemode != 2)
+        {
+            printf("Invalid input try again");
+        }
+
+    } while (gamemode != 1 && gamemode != 2);
+    do
+    {
+        printf("\nPlease enter one integer (3-10) for the size of the grid\n");
+        printf("Example: Input 3 for a 3x3 grid size\n");
+        printf("Grid Size: ");
+        scanf("%d", &size);
+        if (!(size >= 3 && size <= 10))
+        {
+            printf("Invalid input try again");
+        }
+
+    } while (!(size >= 3 && size <= 10));
 
     char array[SIZE][SIZE]; // Array size must be defined for the makeGrid to work, SIZE is predefined
     reset(array, size);

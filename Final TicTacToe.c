@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <ctype.h> // Include for isdigit or safer input handling
+#include <ctype.h>
 
-#define SIZE 10 // This is the total size of the array (10)
+#define SIZE 10
 
-// Moved the structure definition outside of any function
 struct XandO
 {
     int scoreX;
@@ -13,9 +12,69 @@ struct XandO
     int checkX;
     int checkO;
 };
+typedef struct
+{
+    int games_played;
+    int wins_player1;
+    int wins_player2;
+    int draws;
+    int *win_patterns;
+    int pattern_count;
+    int pattern_capacity;
+} GameStats;
+GameStats *createGameStats()
+{
+    GameStats *stats = malloc(sizeof(GameStats));
+    stats->games_played = 0;
+    stats->wins_player1 = 0;
+    stats->wins_player2 = 0;
+    stats->draws = 0;
+    stats->pattern_capacity = 10;
+    stats->pattern_count = 0;
 
-// Function prototypes updated for correctness (especially endGame)
+    stats->win_patterns = malloc(sizeof(int) * stats->pattern_capacity);
+    return stats;
+}
+void updateStats(GameStats *stats, char winner, int win_type)
+{
+    stats->games_played++;
 
+    if (winner == 'X')
+        stats->wins_player1++;
+    else if (winner == 'O')
+        stats->wins_player2++;
+    else if (winner == 'D')
+        stats->draws++;
+
+    if (winner == 'X' || winner == 'O')
+    {
+        if (stats->pattern_count >= stats->pattern_capacity)
+        {
+            stats->pattern_capacity *= 2;
+            stats->win_patterns =
+                realloc(stats->win_patterns, sizeof(int) * stats->pattern_capacity);
+        }
+
+        stats->win_patterns[stats->pattern_count++] = win_type;
+    }
+}
+void printStatistics(const GameStats *stats)
+{
+    printf("\n===== GAME STATISTICS =====\n");
+    printf("Total Games Played : %d\n", stats->games_played);
+    printf("Player X Wins      : %d\n", stats->wins_player1);
+    printf("Player O Wins      : %d\n", stats->wins_player2);
+    printf("Draws              : %d\n", stats->draws);
+
+    printf("\nWin Pattern History:\n");
+    for (int i = 0; i < stats->pattern_count; i++)
+        printf(" Game %d → Pattern %d\n", i + 1, stats->win_patterns[i]);
+}
+void freeGameStats(GameStats *stats)
+{
+    free(stats->win_patterns);
+    free(stats);
+}
 void makeGrid(char array[][SIZE], int size)
 {
     printf("\n");
@@ -24,218 +83,85 @@ void makeGrid(char array[][SIZE], int size)
         for (int j = 0; j < size; j++)
         {
             printf(" %c ", array[i][j]);
-            if (j < size - 1) // doesn't print the right-most line (aesthetics)
-            {
+            if (j < size - 1)
                 printf("|");
-            }
         }
         printf("\n");
         for (int k = 0; k < size; k++)
         {
-            if (i < size - 1) // doesn't print the bottom row (aesthetics)
+            if (i < size - 1)
             {
                 printf("---");
-                if (k != size - 1) // Doesn't print the right-most plus (aesthetics)
+                if (k != size - 1)
                     printf("+");
             }
         }
         printf("\n");
     }
 }
-int CheckWinO(char array[10][10], int arraySize)
+int CheckWin(char arr[][SIZE], int S, char mark)
 {
-    int count = 0;
+    int count;
 
-    // Check Horizontal Lines
-    for (int x = 0; x < arraySize; x++)
+    // Horizontal
+    for (int r = 0; r < S; r++)
     {
         count = 0;
-        for (int j = 0; j < arraySize; j++)
-        {
-            if (array[x][j] == 'O')
-            {
+        for (int c = 0; c < S; c++)
+            if (arr[r][c] == mark)
                 count++;
-            }
-            // If it's not 'O', the contiguous line is broken. Reset count and continue checking in the same row.
-            else
-            {
-                count = 0;
-            }
-             if (count == arraySize) // Check for win inside the inner loop for efficiency in case of non-full-line TTT rules
-             {
-                printf("winner O");
-                return 1;
-             }
-        }
+        if (count == S)
+            return 1;
     }
 
-    // Check Vertical Lines
-    for (int x = 0; x < arraySize; x++)
+    // Vertical
+    for (int c = 0; c < S; c++)
     {
         count = 0;
-        for (int j = 0; j < arraySize; j++)
-        {
-            if (array[j][x] == 'O')
-            {
+        for (int r = 0; r < S; r++)
+            if (arr[r][c] == mark)
                 count++;
-            }
-            else
-            {
-                count = 0;
-            }
-            if (count == arraySize)
-            {
-                printf("winner O");
-                return 1;
-            }
-        }
+        if (count == S)
+            return 2;
     }
 
-    // Check Diagonal (Top-Left to Bottom-Right)
+    // Diagonal TL→BR
     count = 0;
-    for (int i = 0; i < arraySize; i++)
-    {
-        if (array[i][i] == 'O')
-        {
+    for (int i = 0; i < S; i++)
+        if (arr[i][i] == mark)
             count++;
-        }
-        else
-        {
-            count = 0; 
-            break;
-        }
-    }
-    if (count == arraySize)
-    {
-        printf("winner O");
-        return 1;
-    }
+    if (count == S)
+        return 3;
 
-    // Check Diagonal (Top-Right to Bottom-Left)
+    // Diagonal TR→BL
     count = 0;
-    for (int i = 0; i < arraySize; i++)
-    {
-        if (array[i][arraySize - 1 - i] == 'O')
-        {
+    for (int i = 0; i < S; i++)
+        if (arr[i][S - 1 - i] == mark)
             count++;
-        }
-        else
-        {
-            count = 0; 
-            break;
-        }
-    }
-    if (count == arraySize)
-    {
-        printf("winner O");
-        return 1;
-    }
+    if (count == S)
+        return 4;
+
     return 0;
 }
-int CheckWinX(char array[10][10], int arraySize)
-{
-    int count = 0;
-
-    // Check Horizontal Lines
-    for (int x = 0; x < arraySize; x++)
-    {
-        count = 0;
-        for (int j = 0; j < arraySize; j++)
-        {
-            if (array[x][j] == 'X')
-            {
-                count++;
-            }
-            // If it's not 'X', the contiguous line is broken. Reset count and continue checking in the same row.
-            else
-            {
-                count = 0;
-            }
-             if (count == arraySize) 
-             {
-                printf("winner X");
-                return 2;
-             }
-        }
-    }
-
-    // Check Vertical Lines
-    for (int x = 0; x < arraySize; x++)
-    {
-        count = 0;
-        for (int j = 0; j < arraySize; j++)
-        {
-            if (array[j][x] == 'X')
-            {
-                count++;
-            }
-            else
-            {
-                count = 0;
-            }
-            if (count == arraySize)
-            {
-                printf("winner X");
-                return 2;
-            }
-        }
-    }
-
-    // Check Diagonal (Top-Left to Bottom-Right)
-    count = 0;
-    for (int i = 0; i < arraySize; i++)
-    {
-        if (array[i][i] == 'X')
-        {
-            count++;
-        }
-        else
-        {
-            count = 0;
-            break;
-        }
-    }
-    if (count == arraySize)
-    {
-        printf("winner X");
-        return 2;
-    }
-
-    // Check Diagonal (Top-Right to Bottom-Left)
-    count = 0;
-    for (int i = 0; i < arraySize; i++)
-    {
-        if (array[i][arraySize - 1 - i] == 'X')
-        {
-            count++;
-        }
-        else
-        {
-            count = 0;
-            break;
-        }
-    }
-    if (count == arraySize)
-    {
-        printf("winner X");
-        return 2;
-    }
-    return 0;
-}
+int CheckWinX(char arr[][SIZE], int S) { return CheckWin(arr, S, 'X'); }
+int CheckWinO(char arr[][SIZE], int S) { return CheckWin(arr, S, 'O'); }
 int spaceCheck(char array[][SIZE], int x, int y)
 {
     if (x < 0 || x >= SIZE || y < 0 || y >= SIZE)
     {
-        printf("Coordinates are outside the grid boundaries.\n");
-        return 1; // Treat out-of-bounds as taken/invalid
-    }
-    if (array[x][y] != ' ') // If the space is not blank, return 1
-    {
-        printf("That space is already taken, please choose another\n");
+        printf("Coordinates out of bounds.\n");
         return 1;
     }
-    else
-        return 0;
+    if (array[x][y] != ' ')
+    {
+        printf("That space is taken.\n");
+        return 1;
+    }
+    return 0;
+}
+int AIspaceCheck(char array[][SIZE], int x, int y)
+{
+    return (x < 0 || x >= SIZE || y < 0 || y >= SIZE || array[x][y] != ' ');
 }
 int find_strategic_move(char array[][SIZE], int arraySize, char mark, int *moveX, int *moveY)
 {
@@ -247,14 +173,14 @@ int find_strategic_move(char array[][SIZE], int arraySize, char mark, int *moveX
     {
         int mark_count = 0;
         int empty_r = -1, empty_c = -1;
-        
+
         // This inner loop needs to check for a contiguous line of SIZE-1 marks
         // This implementation checks a whole row/col for SIZE-1 marks, which is fine for small TTT but slow for larger.
         // Given the original structure, we maintain the original logic for simplicity.
-        
+
         // Reset check variables for each row
         mark_count = 0;
-        empty_r = -1; 
+        empty_r = -1;
         empty_c = -1;
 
         for (int c = 0; c < arraySize; c++)
@@ -266,7 +192,7 @@ int find_strategic_move(char array[][SIZE], int arraySize, char mark, int *moveX
             else if (array[r][c] == ' ')
             {
                 // Only track one empty spot
-                if (empty_r == -1) 
+                if (empty_r == -1)
                 {
                     empty_r = r;
                     empty_c = c;
@@ -278,14 +204,14 @@ int find_strategic_move(char array[][SIZE], int arraySize, char mark, int *moveX
                     break;
                 }
             }
-            else 
+            else
             {
-                 // Opponent mark breaks the potential line
+                // Opponent mark breaks the potential line
                 mark_count = -100; // Force fail the check for this row
                 break;
             }
         }
-        
+
         // Check if we found a line of (size - 1) marks and exactly one empty spot
         if (mark_count == arraySize - 1 && empty_r != -1)
         {
@@ -300,12 +226,12 @@ int find_strategic_move(char array[][SIZE], int arraySize, char mark, int *moveX
     {
         int mark_count = 0;
         int empty_r = -1, empty_c = -1;
-        
+
         // Reset check variables for each column
         mark_count = 0;
-        empty_r = -1; 
+        empty_r = -1;
         empty_c = -1;
-        
+
         for (int r = 0; r < arraySize; r++)
         {
             if (array[r][c] == mark)
@@ -314,21 +240,21 @@ int find_strategic_move(char array[][SIZE], int arraySize, char mark, int *moveX
             }
             else if (array[r][c] == ' ')
             {
-                if (empty_r == -1) 
+                if (empty_r == -1)
                 {
                     empty_r = r;
                     empty_c = c;
                 }
                 else
                 {
-                    mark_count = -100; 
+                    mark_count = -100;
                     break;
                 }
             }
             else
             {
-                mark_count = -100; 
-                break; 
+                mark_count = -100;
+                break;
             }
         }
         if (mark_count == arraySize - 1 && empty_r != -1)
@@ -350,7 +276,7 @@ int find_strategic_move(char array[][SIZE], int arraySize, char mark, int *moveX
         }
         else if (array[i][i] == ' ')
         {
-            if (empty_r == -1) 
+            if (empty_r == -1)
             {
                 empty_r = i;
                 empty_c = i;
@@ -363,7 +289,7 @@ int find_strategic_move(char array[][SIZE], int arraySize, char mark, int *moveX
         }
         else
         {
-            mark_count = -100; 
+            mark_count = -100;
             break;
         }
     }
@@ -376,7 +302,7 @@ int find_strategic_move(char array[][SIZE], int arraySize, char mark, int *moveX
 
     // --- 4. Check Diagonal (Top-Right to Bottom-Left) ---
     mark_count = 0;
-    empty_r = -1; 
+    empty_r = -1;
     empty_c = -1;
     for (int i = 0; i < arraySize; i++)
     {
@@ -387,7 +313,7 @@ int find_strategic_move(char array[][SIZE], int arraySize, char mark, int *moveX
         }
         else if (array[i][j] == ' ')
         {
-            if (empty_r == -1) 
+            if (empty_r == -1)
             {
                 empty_r = i;
                 empty_c = j;
@@ -413,282 +339,180 @@ int find_strategic_move(char array[][SIZE], int arraySize, char mark, int *moveX
 
     return 0; // No strategic move found
 }
-int AIspaceCheck(char array[][SIZE], int x, int y) 
+void pvp(char array[][SIZE], int *turn, int size)
 {
-    // Check bounds for AI-generated coordinates
-     if (x < 0 || x >= SIZE || y < 0 || y >= SIZE)
-    {
-        return 1; // Out of bounds
-    }
-    if (array[x][y] != ' ') // If the space is not blank, return 1 (taken)
-    {
-        return 1;
-    }
-    else
-        return 0; // Available
-}
-void pvp(char array[][SIZE], int *turn, int size) // Player vs. PLayer function
-{
-    int x, y; 
-    printf("=---------Player vs. Player---------=\n\n");
-    if (*turn == 0)
-        printf("Player X's turn --> Place an X\n");
-    else if (*turn == 1)
-        printf("Player O's turn --> Place an O\n");
-        
-    printf("Coordinates are 0 to %d.\n", size - 1);
-    printf("Example: Place at: 0 1 (Row 0, Column 1)\n");
-    printf("Place at (Row Col): ");
+    int x, y;
+    printf("\n--- Player vs Player ---\n");
 
-    // Check for valid number of inputs
-    if (scanf("%d%d", &x, &y) != 2) 
+    if (*turn == 0)
+        printf("Player X turn\n");
+    else
+        printf("Player O turn\n");
+
+    printf("Row Col: ");
+    if (scanf("%d%d", &x, &y) != 2)
     {
-        printf("Invalid input format. Turn skipped.\n");
-        // Clear input buffer to prevent loop on next turn
-        while (getchar() != '\n'); 
-        return; 
+        printf("Invalid input.\n");
+        while (getchar() != '\n')
+            ;
+        return;
     }
-    
-    // Check bounds
-    if (x < 0 || x >= size || y < 0 || y >= size)
-    {
-        printf("Coordinates (%d %d) are outside the grid boundaries (0 to %d).\n", x, y, size-1);
-        return; 
-    }
-    
-    // Check space
-    if (spaceCheck(array, x, y) == 0) // If check returns 0 (space is free)
+
+    if (spaceCheck(array, x, y) == 0)
     {
         if (*turn == 0)
-        {
-            array[x][y] = 'X'; 
-            *turn = 1;   // changes turn to 1 (O)
-        }
-        else if (*turn == 1)
-        {
+            array[x][y] = 'X';
+        else
             array[x][y] = 'O';
-            *turn = 0; // changes turn to 0 (X)
-        }
+        *turn = 1 - *turn;
     }
 }
 void pvAI(char array[][SIZE], int *turn, int size)
 {
-    int x, y; // Human input
-    int ai_x, ai_y; // AI move
-    
-    printf("=---------Player vs. AI---------=\n\n");
+    int x, y, ai_x, ai_y;
 
-    if (*turn == 0) // Human Player X's Turn
+    if (*turn == 0)
     {
-        printf("Player X's turn --> Place an X\n");
-        printf("Coordinates are 0 to %d.\n", size - 1);
-        printf("Example: Place at: 0 1 (Row 0, Column 1)\n");
-        printf("Place at (Row Col): ");
-        
-        // Check for valid number of inputs
-        if (scanf("%d%d", &x, &y) != 2) 
+        printf("\nPlayer X turn\n");
+        printf("Row Col: ");
+
+        if (scanf("%d%d", &x, &y) != 2)
         {
-            printf("Invalid input format. Turn skipped.\n");
-            // Clear input buffer to prevent loop on next turn
-            while (getchar() != '\n'); 
-            return; 
-        }
-        
-        // Check bounds
-        if (x < 0 || x >= size || y < 0 || y >= size)
-        {
-            printf("Coordinates (%d %d) are outside the grid boundaries (0 to %d).\n", x, y, size-1);
-            return; 
+            printf("Invalid input.\n");
+            while (getchar() != '\n')
+                ;
+            return;
         }
 
-        // Check space
         if (spaceCheck(array, x, y) == 0)
         {
-            array[x][y] = 'X'; 
-            *turn = 1; // Change turn to AI
+            array[x][y] = 'X';
+            *turn = 1;
         }
     }
-    else if (*turn == 1) // AI Player O's Turn
+    else
     {
-        printf("Player AI's turn --> Place an O\n");
-        
-        // 1. Check for AI winning move ('O')
+        printf("\nAI turn (O)\n");
+
         if (find_strategic_move(array, size, 'O', &ai_x, &ai_y))
         {
             array[ai_x][ai_y] = 'O';
-            printf("AI plays winning move at: %d %d\n", ai_x, ai_y); 
         }
-        // 2. Check for human player winning move (Block 'X')
         else if (find_strategic_move(array, size, 'X', &ai_x, &ai_y))
         {
             array[ai_x][ai_y] = 'O';
-            printf("AI blocks player X at: %d %d\n", ai_x, ai_y); 
         }
-        // 3. Random move
-        else 
+        else
         {
             do
             {
                 ai_x = rand() % size;
                 ai_y = rand() % size;
-            } while (AIspaceCheck(array, ai_x, ai_y) != 0);
-            
+            } while (AIspaceCheck(array, ai_x, ai_y));
+
             array[ai_x][ai_y] = 'O';
-            printf("AI moves randomly at: %d %d\n", ai_x, ai_y); 
         }
-        *turn = 0; // Change turn to human
+
+        *turn = 0;
     }
 }
 void reset(char array[][SIZE], int size)
 {
-    for (int i = 0; i < size; i++) 
-    {
-        for (int j = 0; j < size; j++) // Loop up to size, not SIZE
-        {
+    for (int i = 0; i < size; i++)
+        for (int j = 0; j < size; j++)
             array[i][j] = ' ';
-        }
-    }
 }
-// CRITICAL FIX: Changed 'var' to 'var' to receive a pointer
-struct XandO endGame(char array[][SIZE], int size, struct XandO var, int *gameon)
+struct XandO endGame(char array[][SIZE], int size, struct XandO var, int *gameon, GameStats *stats)
 {
-    int playAgain = 0; // Local variable for user input
+    int playAgain = 0;
 
-    // Player O Win Check
-    if (var.checkO == 1) // Use . to access struct members
+    // Player X win
+    if (var.checkX > 0)
     {
-        printf(": Player O wins\n");
-        var.scoreO++; // Increment the score on the local copy
-        printf("\nScore: X: %d --- O: %d\n", var.scoreX, var.scoreO);
-        
-        // Prompt to play again
-        printf("\nEnter 1 to play again\nEnter 0 to exit\n");
-        if (scanf("%d", &playAgain) != 1)
-        {
-            playAgain = 0; 
-            while(getchar() != '\n'); // Clear buffer
-        }
+        printf("\nPlayer X wins! Pattern %d\n", var.checkX);
+        var.scoreX++;
 
-        if (playAgain == 1)
-        {
+        updateStats(stats, 'X', var.checkX);
+
+        printf("Play again? (1=yes 0=no): ");
+        scanf("%d", &playAgain);
+
+        if (playAgain)
             reset(array, size);
-            var.checkO = 0; // Reset win condition
-            var.checkX = 0;
-        }
-        else if (playAgain == 0)
+        else
             *gameon = 0;
+
+        var.checkX = var.checkO = 0;
     }
-    
-    // Player X Win Check
-    if (var.checkX == 2) // Use . to access struct members
+
+    // Player O win
+    if (var.checkO > 0)
     {
-        printf(": Player X wins\n");
-        var.scoreX++; // Increment the score on the local copy
-        printf("\nScore: X: %d --- O: %d\n", var.scoreX, var.scoreO); 
-        
-        // Prompt to play again
-        printf("\nEnter 1 to play again\nEnter 0 to exit\n");
-        if (scanf("%d", &playAgain) != 1)
-        {
-            playAgain = 0; 
-            while(getchar() != '\n'); // Clear buffer
-        }
+        printf("\nPlayer O wins! Pattern %d\n", var.checkO);
+        var.scoreO++;
 
-        if (playAgain == 1)
-        {
+        updateStats(stats, 'O', var.checkO);
+
+        printf("Play again? (1=yes 0=no): ");
+        scanf("%d", &playAgain);
+
+        if (playAgain)
             reset(array, size);
-            var.checkO = 0; // Reset win condition
-            var.checkX = 0;
-        }
-        else if (playAgain == 0)
+        else
             *gameon = 0;
+
+        var.checkX = var.checkO = 0;
     }
-    
-    return var; // Return the modified struct back to main
+
+    return var;
 }
 int main()
 {
-    int size = 0; 
-    int gamemode = 0, gameon = 1;
-    int turn = 0;
-    struct XandO var;
-    var.scoreX = 0;
-    var.scoreO = 0;
-    var.checkX = 0;
-    var.checkO = 0;
+    int size, gamemode, gameon = 1, turn = 0;
+
+    struct XandO var = {0, 0, 0, 0};
+    GameStats *stats = createGameStats();
 
     srand(time(NULL));
 
-    // User inputs for gamemode
+    // Mode
     do
     {
-        printf("\n=---------Tic-Tac-Toe---------=\n\n");
-        printf("Player vs. Player: 1\n");
-        printf("Player vs. AI: 2\n");
-        printf("Gamemode: ");
-
-        if (scanf("%d", &gamemode) != 1)
-        {
-            printf("Invalid input. Please enter a number.\n");
-            gamemode = 0; // Reset gamemode
-            while (getchar() != '\n'); // Clear input buffer
-        }
-        else if (gamemode != 1 && gamemode != 2)
-        {
-            printf("Invalid gamemode input. Try again.\n");
-        }
-
+        printf("\n1 = PvP\n2 = PvAI\nSelect: ");
+        scanf("%d", &gamemode);
     } while (gamemode != 1 && gamemode != 2);
-    
-    // User inputs for size
+
+    // Board size
     do
     {
-        printf("\nPlease enter one integer (3-10) for the size of the grid\n");
-        printf("Grid Size: ");
-        
-        if (scanf("%d", &size) != 1)
-        {
-            printf("Invalid input. Please enter a number.\n");
-            size = 0; // Reset size
-            while (getchar() != '\n'); // Clear input buffer
-        }
-        else if (!(size >= 3 && size <= SIZE)) // SIZE is 10
-        {
-            printf("Invalid size input. Try again.\n");
-        }
+        printf("Enter board size (3–10): ");
+        scanf("%d", &size);
+    } while (size < 3 || size > 10);
 
-    } while (!(size >= 3 && size <= SIZE));
-
-    char array[SIZE][SIZE]; 
+    char array[SIZE][SIZE];
     reset(array, size);
 
     makeGrid(array, size);
 
-    while (gameon == 1)
+    while (gameon)
     {
-        if (gamemode == 1) // Player vs. Player
-        {
+        if (gamemode == 1)
             pvp(array, &turn, size);
-        }
-        else if (gamemode == 2) // Player vs. AI
-        {
+        else
             pvAI(array, &turn, size);
-        }
-        
-        // Check win conditions after every move
+
         var.checkX = CheckWinX(array, size);
         var.checkO = CheckWinO(array, size);
-        
+
         makeGrid(array, size);
-        
-        // CRITICAL FIX: Pass the address of the struct
-        var = endGame(array, size, var, &gameon);
+
+        var = endGame(array, size, var, &gameon, stats);
     }
-    
-    printf("\n--- Final Score ---\n");
-    printf("Player X: %d\n", var.scoreX);
-    printf("Player O: %d\n", var.scoreO);
-    printf("-------------------\n");
-    
+
+    printf("\nFinal Score: X=%d  O=%d\n", var.scoreX, var.scoreO);
+    printStatistics(stats);
+
+    freeGameStats(stats);
+
     return 0;
 }
